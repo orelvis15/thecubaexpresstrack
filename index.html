@@ -31,10 +31,13 @@
 </head>
 <body>
   <div class="container mt-5">
-    <h1 class="mb-4 text-center">Buscador de Envíos</h1>
+    <div class="text-center mb-4">
+      <img height="150" width="150" src="https://scontent-hou1-1.xx.fbcdn.net/v/t39.30808-6/342024622_180617574903749_970949631408930055_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=09cbfe&_nc_ohc=LATkd4_K2dAAX_86djD&_nc_ht=scontent-hou1-1.xx&oh=00_AfDafuIyt1NywtTvRDuoINJsVnrEbmNvhnFdV8XT_5zUig&oe=6480465B" class="img-fluid mt-4" alt="Imagen">
+    </div>
+    <h1 class="mb-4 text-center">The Cuba Express Envíos</h1>
     <div class="text-center mb-4">
       <a href="https://www.facebook.com/profile.php?id=100092019580512" target="_blank" class="text-primary" title="Facebook">
-        <i class="fab fa-facebook fa-2x"></i>
+        <i class="fab fa-facebook fa-2x" style="display: inline-block; vertical-align: middle;"></i>
         Síguenos en Facebook
       </a>
     </div>
@@ -77,6 +80,7 @@
         const listItem = document.createElement('div');
         listItem.classList.add('list-group-item');
         listItem.textContent = codigo;
+        listItem.style.cursor = 'pointer';
         listItem.addEventListener('click', () => {
           document.getElementById('codigo-envio').value = codigo;
           buscarEnvio();
