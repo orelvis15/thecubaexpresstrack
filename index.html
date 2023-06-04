@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buscador de Envíos</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+  <style>
+  body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .history-container, .results-container {
+    flex: 1;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+    overflow-y: auto;
+  }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="mb-4 text-center">Buscador de Envíos</h1>
+    <div class="text-center mb-4">
+      <a href="https://www.facebook.com/profile.php?id=100092019580512" target="_blank" class="text-primary" title="Facebook">
+        <i class="fab fa-facebook fa-2x"></i>
+        Síguenos en Facebook
+      </a>
+    </div>
+    <div class="input-group mb-3">
+      <input type="text" id="codigo-envio" class="form-control" placeholder="Introduce el código de envío">
+      <div class="input-group-append">
+        <button class="btn btn-primary" type="button" onclick="buscarEnvio()">Buscar</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4>Historial</h4>
+          <button class="btn btn-success" onclick="limpiarHistorial()">Limpiar Historial</button>
+        </div>
+        <div id="historial" class="history-container"></div>
+      </div>
+    <div class="col-md-9">
+      <div class="text-center mb-3"> <!-- Agregado contenedor centrado -->
+        <h4 class="mb-0">Estados del Envío</h4> <!-- Título centrado -->
+      </div>
+      <div id="progress-bar" class="progress d-none">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+      </div>
+      <div id="resultado-envio" class="results-container mt-4"></div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/js/all.min.js"></script>
+  <script>
+    const historial = JSON.parse(localStorage.getItem('historial')) || [];
+
+    function renderHistorial() {
+      const historialElement = document.getElementById('historial');
+      historialElement.innerHTML = '';
+
+      historial.forEach((codigo) => {
+        const listItem = document.createElement('div');
+        listItem.classList.add('list-group-item');
+        listItem.textContent = codigo;
+        listItem.addEventListener('click', () => {
+          document.getElementById('codigo-envio').value = codigo;
+          buscarEnvio();
+        });
+
+        // Agregar márgenes entre los elementos del historial
+        listItem.style.marginBottom = '10px';
+
+        historialElement.appendChild(listItem);
+      });
+    }
+
+    renderHistorial();
+
+    function buscarEnvio() {
+      const codigoEnvio = document.getElementById('codigo-envio').value.trim();
+      const searchButton = document.querySelector('button');
+      const progressBar = document.getElementById('progress-bar');
+
+      if (codigoEnvio === '') {
+        return;
+      }
+
+            document.getElementById('codigo-envio').disabled = true;
+      searchButton.disabled = true;
+      progressBar.classList.remove('d-none');
+
+      axios
+        .get(`https://us-central1-thecubaexpress.cloudfunctions.net/buscarEnvio/buscar-envio?codigo=${codigoEnvio}`)
+        .then(({ data }) => {
+          const datos = data.datos;
+          let resultadoFormateado = '';
+
+          datos.forEach((envio, index) => {
+            const paso = datos.length - index;
+
+            const cardClass = index === 0 ? 'card border-success mb-3' : 'card mb-3';
+
+            resultadoFormateado += `
+              <div class="${cardClass}">
+                <div class="card-body">
+                  <h5 class="card-title">Estado ${paso}: ${envio.estado}</h5>
+                  <p class="card-text">${formatDate(envio.fecha)}</p>
+                  ${envio.oficina_origen ? `<p class="card-text">Oficina de origen: ${envio.oficina_origen}</p>` : ""}
+                  ${envio.oficina_destino ? `<p class="card-text">Oficina de destino: ${envio.oficina_destino}</p>` : ""}
+                </div>
+              </div>
+            `;
+          });
+
+          document.getElementById("resultado-envio").innerHTML = resultadoFormateado;
+          document.getElementById("codigo-envio").disabled = false;
+          searchButton.disabled = false;
+          progressBar.classList.add("d-none");
+
+          // Agregar búsqueda al historial y actualizar
+          if (!historial.includes(codigoEnvio)) {
+            historial.push(codigoEnvio);
+            localStorage.setItem('historial', JSON.stringify(historial));
+            renderHistorial();
+          }
+        })
+        .catch(error => {
+          console.log(error);
+          document.getElementById("codigo-envio").disabled = false;
+          searchButton.disabled = false;
+          progressBar.classList.add("d-none");
+        });
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const options = { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+      return date.toLocaleDateString('es-ES', options);
+    }
+
+    function limpiarHistorial() {
+      historial.length = 0;
+      localStorage.removeItem('historial');
+      renderHistorial();
+    }
+  </script>
+</body>
+</html>
+
